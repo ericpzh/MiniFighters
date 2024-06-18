@@ -4,7 +4,7 @@ A Mini Airways mod for fighting off enemy attacks. In this mod, you will need to
 
 The game now runs in "endless" mode. Unless the score dips below 0, the game won't end. You get one point deducted each time you lose a fighter. That is, having them out-of-bound, collide with each other, or collide with an enemy plane.
 
-<img src="ui.png" width=20% height=20%>
+<img src="ui.png" width=50% height=50%>
 
 # How to Install
 
@@ -21,7 +21,7 @@ The game now runs in "endless" mode. Unless the score dips below 0, the game won
 
 游戏现在以无尽模式运行，除非分数低于 0，否则游戏不会结束。每次您失去一架战斗机（战机飞出边界、相互碰撞或与敌机相撞）会被扣一分。
 
-<img src="ui.png" width=20% height=20%>
+<img src="ui.png" width=50% height=50%>
 
 # 如何安装
 
