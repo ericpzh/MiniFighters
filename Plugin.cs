@@ -161,20 +161,44 @@ namespace MiniFighters
             }
         }
 
-        private float GetTargetSpeed()
+        public float GetTargetSpeed()
         {
             switch(aircraft_.colorCode)
             {
-                // TODO: color based plane speed/turn radius.
-                case ColorCode.Option.Yellow:
-                case ColorCode.Option.Red:
-                case ColorCode.Option.Orange:
                 case ColorCode.Option.LightBlue:
+                    return 28f;
                 case ColorCode.Option.Green:
+                    return 32f;
                 case ColorCode.Option.Pink:
-                    break;
+                    return 36f;
+                case ColorCode.Option.Yellow:
+                    return 40f;
+                case ColorCode.Option.Orange:
+                    return 44f;
+                case ColorCode.Option.Red:
+                    return 48f;
             }
             return 36f;
+        }
+
+        public float GetTurnSpeed()
+        {
+            switch(aircraft_.colorCode)
+            {
+                case ColorCode.Option.LightBlue:
+                    return 0.12f;
+                case ColorCode.Option.Green:
+                    return 0.10f;
+                case ColorCode.Option.Pink:
+                    return 0.08f;
+                case ColorCode.Option.Yellow:
+                    return 0.06f;
+                case ColorCode.Option.Orange:
+                    return 0.05f;
+                case ColorCode.Option.Red:
+                    return 0.04f;
+            }
+            return 0.06f;
         }
 
         public bool friendly_ = true;
@@ -551,6 +575,130 @@ namespace MiniFighters
             { 
                 __instance.targetSpeed = (float)__state[0];
             }
+        }
+    }
+
+    // Patch turning radius.
+    [HarmonyPatch(typeof(Aircraft), "TrySetupLanding", new Type[] {typeof(Runway), typeof(bool)})]
+    class PatchTrySetupLanding
+    {
+        static bool Prefix(Runway runway, bool doLand, ref Aircraft __instance, ref object[] __state)
+        {
+            
+            AircraftTag tag = __instance.GetComponent<AircraftTag>();
+            if (tag == null)
+            {
+                return true;
+            }
+
+            __state = new object[] {Aircraft.TurnSpeed};
+            Aircraft.TurnSpeed = tag.GetTurnSpeed();
+            return true;
+        }
+
+        static void Postfix(Runway runway, bool doLand, ref Aircraft __instance, ref object[] __state)
+        {
+            if (__state != null && __state.Length > 0)
+            {
+                // Restore the global turning speed.
+                Aircraft.TurnSpeed = (float)__state[0];
+            }
+        }
+    }
+
+    // Patching turning speed.
+    [HarmonyPatch(typeof(Aircraft), "UpdateHeading", new Type[] {})]
+    class PatchUpdateHeading
+    {
+        static bool Prefix(ref Aircraft __instance, ref PlaceableWaypoint ____HARWCurWP, ref object[] __state)
+        {
+            AircraftTag tag = __instance.GetComponent<AircraftTag>();
+            if (tag == null)
+            {
+                return true;
+            }
+
+            __state = new object[] {Aircraft.TurnSpeed};
+            Aircraft.TurnSpeed = tag.GetTurnSpeed();
+            return true;
+        }
+
+        static void Postfix(ref Aircraft __instance, ref PlaceableWaypoint ____HARWCurWP, ref object[] __state)
+        {
+            if (__state != null && __state.Length > 0)
+            {
+                // Restore the global turning speed.
+                Aircraft.TurnSpeed = (float)__state[0];
+            }
+        }
+    }
+
+    // Patching turning speed.
+    [HarmonyPatch(typeof(Aircraft), "GenerateFlyingPath", new Type[] {})]
+    class PatchGenerateFlyingPath
+    {
+        static bool Prefix(ref Aircraft __instance, ref object[] __state)
+        {
+            AircraftTag tag = __instance.GetComponent<AircraftTag>();
+            if (tag == null)
+            {
+                return true;
+            }
+
+            __state = new object[] {Aircraft.TurnSpeed};
+            Aircraft.TurnSpeed = tag.GetTurnSpeed();
+            return true;
+        }
+
+        static void Postfix(ref Aircraft __instance, ref object[] __state)
+        {
+            if (__state != null && __state.Length > 0)
+            {
+                // Restore the global turning speed.
+                Aircraft.TurnSpeed = (float)__state[0];
+            }
+        }
+    }
+
+    // Patching turning speed.
+    [HarmonyPatch(typeof(Aircraft), "PredictPosAfterTurn", new Type[] {typeof(float)})]
+    class PatchPredictPosAfterTurn
+    {
+        static bool Prefix(float angle, ref Aircraft __instance, ref object[] __state)
+        {
+            AircraftTag tag = __instance.GetComponent<AircraftTag>();
+            if (tag == null)
+            {
+                return true;
+            }
+
+            __state = new object[] {Aircraft.TurnSpeed};
+            Aircraft.TurnSpeed = tag.GetTurnSpeed();
+            return true;
+        }
+
+        static void Postfix(float angle, ref Aircraft __instance, ref object[] __state)
+        {
+            if (__state != null && __state.Length > 0)
+            {
+                // Restore the global turning speed.
+                Aircraft.TurnSpeed = (float)__state[0];
+            }
+        }
+    }
+
+    // Patching turning speed.
+    [HarmonyPatch(typeof(Aircraft), "TurningRadius", MethodType.Getter)]
+    class PatchTurningRadius
+    {
+        static void Postfix(ref Aircraft __instance, ref float __result)
+        {
+            AircraftTag tag = __instance.GetComponent<AircraftTag>();
+            if (tag == null)
+            {
+                return;
+            }
+            __result = tag.GetTurnSpeed();
         }
     }
 
