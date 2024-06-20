@@ -95,13 +95,13 @@ namespace MiniFighters
 
             enemy.StartCoroutine(DamageCoroutine(enemy.aircraft_));
 
-            yield return new WaitForSeconds(3f);
+            yield return new WaitForSeconds(PLANE_DOWN_TIME);
 
             // Resume normal speed.
             friendly.aircraft_.speed = friendly.GetTargetSpeed();
 
             // Enemy down.
-            enemy.aircraft_.ConditionalDestroy();
+            AircraftDown(enemy);
             Manager.AddScore();
 
             if (--friendly.ammo_ <= 0)
@@ -126,39 +126,15 @@ namespace MiniFighters
             friendly.activeCoroutine_ = null;
         }
 
-        private static IEnumerator DamageCoroutine(Aircraft aircraft)
+        public static void AircraftDown(AircraftTag tag)
         {
-            while (aircraft != null)
+            if (tag == null)
             {
-                aircraft.AP.GetComponent<Renderer>().material.color = Color.white;
-                yield return new WaitForSeconds(0.1f);
-                aircraft.AP.GetComponent<Renderer>().material.color = Color.red;
-                yield return new WaitForSeconds(0.1f);
-            }
-        }
-
-        private void Update()
-        {
-            if (aircraft_ == null)
-            {
+                Plugin.Log.LogInfo("tag is null!");
                 return;
             }
-
-            if (friendly_)
-            {
-                aircraft_.targetSpeed = GetTargetSpeed();
-                aircraft_.AP.GetComponent<Renderer>().material.color = Color.green;
-                if (aircraft_.direction == Aircraft.Direction.Inbound)
-                {
-                    aircraft_.Panel.GetComponent<Renderer>().material.color = Color.green;
-                }
-            }
-            else
-            {
-                aircraft_.targetSpeed = 16f;
-                aircraft_.AP.GetComponent<Renderer>().material.color = Color.red;
-                aircraft_.Panel.GetComponent<Renderer>().material.color = Color.red;
-            }
+            tag.down_ = true;
+            Manager.Instance.StartCoroutine(AircraftDownCoroutine(tag));
         }
 
         public float GetTargetSpeed()
@@ -201,13 +177,78 @@ namespace MiniFighters
             return 0.06f;
         }
 
+        private static IEnumerator DamageCoroutine(Aircraft aircraft)
+        {
+            while (aircraft != null)
+            {
+                aircraft.AP.GetComponent<Renderer>().material.color = Color.white;
+                yield return new WaitForSeconds(0.1f);
+                aircraft.AP.GetComponent<Renderer>().material.color = Color.red;
+                yield return new WaitForSeconds(0.1f);
+            }
+        }
+
+        private static IEnumerator AircraftDownCoroutine(AircraftTag tag)
+        {
+            Color APColor = tag.aircraft_.AP.GetComponent<Renderer>().material.color;
+            Color PanelColor = tag.aircraft_.Panel.GetComponent<Renderer>().material.color;
+            Vector2 APScale = tag.aircraft_.AP.transform.localScale;
+            Vector2 PanelScale = tag.aircraft_.AP.transform.localScale;
+
+            float t = 0;
+            float maxRotation = 360f;
+            float startTime = Time.time;
+            while (Time.time < startTime + PLANE_DOWN_TIME && tag.aircraft_ != null)
+            {
+                tag.aircraft_.AP.transform.rotation = Quaternion.Euler(0f, 0f, Mathf.Lerp(0f, maxRotation, t));
+                tag.aircraft_.AP.transform.localScale = new Vector2(Mathf.Lerp(APScale.x, 0f, t), Mathf.Lerp(APScale.y, 0f, t));
+                tag.aircraft_.AP.GetComponent<Renderer>().material.color = new Color(APColor.r, APColor.g, APColor.b, Mathf.Lerp(1f, 0f, t));
+
+                tag.aircraft_.Panel.transform.rotation = Quaternion.Euler(0f, 0f, Mathf.Lerp(0f, maxRotation, t));
+                tag.aircraft_.Panel.transform.localScale = new Vector2(Mathf.Lerp(PanelScale.x, 0f, t), Mathf.Lerp(PanelScale.y, 0f, t));
+                tag.aircraft_.Panel.GetComponent<Renderer>().material.color = new Color(PanelColor.r, PanelColor.g, PanelColor.b, Mathf.Lerp(1f, 0f, t));
+
+                t += Time.deltaTime / PLANE_DOWN_TIME;
+
+                yield return new WaitForFixedUpdate();
+            }
+
+            tag.aircraft_.ConditionalDestroy();
+        }
+
+        private void Update()
+        {
+            if (aircraft_ == null)
+            {
+                return;
+            }
+
+            if (friendly_)
+            {
+                aircraft_.targetSpeed = GetTargetSpeed();
+                aircraft_.AP.GetComponent<Renderer>().material.color = Color.green;
+                if (aircraft_.direction == Aircraft.Direction.Inbound)
+                {
+                    aircraft_.Panel.GetComponent<Renderer>().material.color = Color.green;
+                }
+            }
+            else
+            {
+                aircraft_.targetSpeed = 16f;
+                aircraft_.AP.GetComponent<Renderer>().material.color = Color.red;
+                aircraft_.Panel.GetComponent<Renderer>().material.color = Color.red;
+            }
+        }
+
         public bool friendly_ = true;
         public Aircraft aircraft_;
         public int ammo_ = 2;
         public IEnumerator activeCoroutine_ = null;
+        public bool down_ = false;
         private const float SEARCH_STEP_GRADIENT = 0.1f;
         private const float MAX_SEARCH_DISTANCE = 4f;
-        private const float DISTANCE_THRESHOLD = 0.5f;
+        private const float DISTANCE_THRESHOLD = 0.6f;
+        private const float PLANE_DOWN_TIME = 3f;
     }
 
     // Add friendly tag to Aircraft, and slow down incoming aircraft.
@@ -268,6 +309,7 @@ namespace MiniFighters
                     }
 
                     if (tag1.friendly_ && tag1.aircraft_.direction == Aircraft.Direction.Outbound && 
+                        !tag2.friendly_ && tag2.aircraft_.direction == Aircraft.Direction.Inbound && !tag2.down_ &&
                         tag1.activeCoroutine_ == null && AircraftTag.IsInfrontOfMe(tag1.aircraft_, tag2.aircraft_))
                     {
                         // Shot down enemy.
@@ -318,6 +360,7 @@ namespace MiniFighters
                     }
 
                     if (tag1.friendly_ && tag1.aircraft_.direction == Aircraft.Direction.Outbound && 
+                        !tag2.friendly_ && tag2.aircraft_.direction == Aircraft.Direction.Inbound && !tag2.down_ &&
                         tag1.activeCoroutine_ == null && AircraftTag.IsInfrontOfMe(tag1.aircraft_, tag2.aircraft_))
                     {
                         // Shot down enemy.
@@ -345,26 +388,26 @@ namespace MiniFighters
             }
 
             // Friendly collide with enemy without shooting it down.
-            if (tag1.friendly_ != tag2.friendly_ && tag1.friendly_ || tag2.friendly_)
+            if (tag1.friendly_ != tag2.friendly_ && tag1.friendly_ || tag2.friendly_ && !tag1.down_ && !tag2.down_)
             {
                 if (!Manager.IsSubstractScoreGameOver())
                 {
-                    aircraft1.ConditionalDestroy();
-                    aircraft2.ConditionalDestroy();
+                    AircraftTag.AircraftDown(tag1);
+                    AircraftTag.AircraftDown(tag2);
                     return false;
                 }
                 return true;
             }
 
             // Friendly collides.
-            if (tag1.friendly_ && tag2.friendly_)
+            if (tag1.friendly_ && tag2.friendly_ && !tag1.down_ && !tag2.down_)
             {
                 // Two friendly down.
                 Manager.score--;
                 if (!Manager.IsSubstractScoreGameOver())
                 {
-                    aircraft1.ConditionalDestroy();
-                    aircraft2.ConditionalDestroy();
+                    AircraftTag.AircraftDown(tag1);
+                    AircraftTag.AircraftDown(tag2);
                     return false;
                 }
                 return true;
@@ -579,128 +622,128 @@ namespace MiniFighters
     }
 
     // Patch turning radius.
-    [HarmonyPatch(typeof(Aircraft), "TrySetupLanding", new Type[] {typeof(Runway), typeof(bool)})]
-    class PatchTrySetupLanding
-    {
-        static bool Prefix(Runway runway, bool doLand, ref Aircraft __instance, ref object[] __state)
-        {
+    // [HarmonyPatch(typeof(Aircraft), "TrySetupLanding", new Type[] {typeof(Runway), typeof(bool)})]
+    // class PatchTrySetupLanding
+    // {
+    //     static bool Prefix(Runway runway, bool doLand, ref Aircraft __instance, ref object[] __state)
+    //     {
             
-            AircraftTag tag = __instance.GetComponent<AircraftTag>();
-            if (tag == null)
-            {
-                return true;
-            }
+    //         AircraftTag tag = __instance.GetComponent<AircraftTag>();
+    //         if (tag == null)
+    //         {
+    //             return true;
+    //         }
 
-            __state = new object[] {Aircraft.TurnSpeed};
-            Aircraft.TurnSpeed = tag.GetTurnSpeed();
-            return true;
-        }
+    //         __state = new object[] {Aircraft.TurnSpeed};
+    //         Aircraft.TurnSpeed = tag.GetTurnSpeed();
+    //         return true;
+    //     }
 
-        static void Postfix(Runway runway, bool doLand, ref Aircraft __instance, ref object[] __state)
-        {
-            if (__state != null && __state.Length > 0)
-            {
-                // Restore the global turning speed.
-                Aircraft.TurnSpeed = (float)__state[0];
-            }
-        }
-    }
-
-    // Patching turning speed.
-    [HarmonyPatch(typeof(Aircraft), "UpdateHeading", new Type[] {})]
-    class PatchUpdateHeading
-    {
-        static bool Prefix(ref Aircraft __instance, ref PlaceableWaypoint ____HARWCurWP, ref object[] __state)
-        {
-            AircraftTag tag = __instance.GetComponent<AircraftTag>();
-            if (tag == null)
-            {
-                return true;
-            }
-
-            __state = new object[] {Aircraft.TurnSpeed};
-            Aircraft.TurnSpeed = tag.GetTurnSpeed();
-            return true;
-        }
-
-        static void Postfix(ref Aircraft __instance, ref PlaceableWaypoint ____HARWCurWP, ref object[] __state)
-        {
-            if (__state != null && __state.Length > 0)
-            {
-                // Restore the global turning speed.
-                Aircraft.TurnSpeed = (float)__state[0];
-            }
-        }
-    }
+    //     static void Postfix(Runway runway, bool doLand, ref Aircraft __instance, ref object[] __state)
+    //     {
+    //         if (__state != null && __state.Length > 0)
+    //         {
+    //             // Restore the global turning speed.
+    //             Aircraft.TurnSpeed = (float)__state[0];
+    //         }
+    //     }
+    // }
 
     // Patching turning speed.
-    [HarmonyPatch(typeof(Aircraft), "GenerateFlyingPath", new Type[] {})]
-    class PatchGenerateFlyingPath
-    {
-        static bool Prefix(ref Aircraft __instance, ref object[] __state)
-        {
-            AircraftTag tag = __instance.GetComponent<AircraftTag>();
-            if (tag == null)
-            {
-                return true;
-            }
+    // [HarmonyPatch(typeof(Aircraft), "UpdateHeading", new Type[] {})]
+    // class PatchUpdateHeading
+    // {
+    //     static bool Prefix(ref Aircraft __instance, ref PlaceableWaypoint ____HARWCurWP, ref object[] __state)
+    //     {
+    //         AircraftTag tag = __instance.GetComponent<AircraftTag>();
+    //         if (tag == null)
+    //         {
+    //             return true;
+    //         }
 
-            __state = new object[] {Aircraft.TurnSpeed};
-            Aircraft.TurnSpeed = tag.GetTurnSpeed();
-            return true;
-        }
+    //         __state = new object[] {Aircraft.TurnSpeed};
+    //         Aircraft.TurnSpeed = tag.GetTurnSpeed();
+    //         return true;
+    //     }
 
-        static void Postfix(ref Aircraft __instance, ref object[] __state)
-        {
-            if (__state != null && __state.Length > 0)
-            {
-                // Restore the global turning speed.
-                Aircraft.TurnSpeed = (float)__state[0];
-            }
-        }
-    }
-
-    // Patching turning speed.
-    [HarmonyPatch(typeof(Aircraft), "PredictPosAfterTurn", new Type[] {typeof(float)})]
-    class PatchPredictPosAfterTurn
-    {
-        static bool Prefix(float angle, ref Aircraft __instance, ref object[] __state)
-        {
-            AircraftTag tag = __instance.GetComponent<AircraftTag>();
-            if (tag == null)
-            {
-                return true;
-            }
-
-            __state = new object[] {Aircraft.TurnSpeed};
-            Aircraft.TurnSpeed = tag.GetTurnSpeed();
-            return true;
-        }
-
-        static void Postfix(float angle, ref Aircraft __instance, ref object[] __state)
-        {
-            if (__state != null && __state.Length > 0)
-            {
-                // Restore the global turning speed.
-                Aircraft.TurnSpeed = (float)__state[0];
-            }
-        }
-    }
+    //     static void Postfix(ref Aircraft __instance, ref PlaceableWaypoint ____HARWCurWP, ref object[] __state)
+    //     {
+    //         if (__state != null && __state.Length > 0)
+    //         {
+    //             // Restore the global turning speed.
+    //             Aircraft.TurnSpeed = (float)__state[0];
+    //         }
+    //     }
+    // }
 
     // Patching turning speed.
-    [HarmonyPatch(typeof(Aircraft), "TurningRadius", MethodType.Getter)]
-    class PatchTurningRadius
-    {
-        static void Postfix(ref Aircraft __instance, ref float __result)
-        {
-            AircraftTag tag = __instance.GetComponent<AircraftTag>();
-            if (tag == null)
-            {
-                return;
-            }
-            __result = tag.GetTurnSpeed();
-        }
-    }
+    // [HarmonyPatch(typeof(Aircraft), "GenerateFlyingPath", new Type[] {})]
+    // class PatchGenerateFlyingPath
+    // {
+    //     static bool Prefix(ref Aircraft __instance, ref object[] __state)
+    //     {
+    //         AircraftTag tag = __instance.GetComponent<AircraftTag>();
+    //         if (tag == null)
+    //         {
+    //             return true;
+    //         }
+
+    //         __state = new object[] {Aircraft.TurnSpeed};
+    //         Aircraft.TurnSpeed = tag.GetTurnSpeed();
+    //         return true;
+    //     }
+
+    //     static void Postfix(ref Aircraft __instance, ref object[] __state)
+    //     {
+    //         if (__state != null && __state.Length > 0)
+    //         {
+    //             // Restore the global turning speed.
+    //             Aircraft.TurnSpeed = (float)__state[0];
+    //         }
+    //     }
+    // }
+
+    // Patching turning speed.
+    // [HarmonyPatch(typeof(Aircraft), "PredictPosAfterTurn", new Type[] {typeof(float)})]
+    // class PatchPredictPosAfterTurn
+    // {
+    //     static bool Prefix(float angle, ref Aircraft __instance, ref object[] __state)
+    //     {
+    //         AircraftTag tag = __instance.GetComponent<AircraftTag>();
+    //         if (tag == null)
+    //         {
+    //             return true;
+    //         }
+
+    //         __state = new object[] {Aircraft.TurnSpeed};
+    //         Aircraft.TurnSpeed = tag.GetTurnSpeed();
+    //         return true;
+    //     }
+
+    //     static void Postfix(float angle, ref Aircraft __instance, ref object[] __state)
+    //     {
+    //         if (__state != null && __state.Length > 0)
+    //         {
+    //             // Restore the global turning speed.
+    //             Aircraft.TurnSpeed = (float)__state[0];
+    //         }
+    //     }
+    // }
+
+    // Patching turning speed.
+    // [HarmonyPatch(typeof(Aircraft), "TurningRadius", MethodType.Getter)]
+    // class PatchTurningRadius
+    // {
+    //     static void Postfix(ref Aircraft __instance, ref float __result)
+    //     {
+    //         AircraftTag tag = __instance.GetComponent<AircraftTag>();
+    //         if (tag == null)
+    //         {
+    //             return;
+    //         }
+    //         __result = tag.GetTurnSpeed();
+    //     }
+    // }
 
     // Point based game over system.
     [HarmonyPatch(typeof(Aircraft), "AircraftOOBGameOver", new Type[] {typeof(Aircraft)})]
@@ -723,9 +766,16 @@ namespace MiniFighters
     {
         static bool Prefix(Aircraft aircraft)
         {
+            AircraftTag tag = aircraft.GetComponent<AircraftTag>();
+            if (tag == null || tag.down_)
+            {
+                return true;
+            }
+
             if (!Manager.IsSubstractScoreGameOver())
             {
-                aircraft.ConditionalDestroy();
+
+                AircraftTag.AircraftDown(tag);
                 return false;
             }
             return true;
@@ -789,7 +839,6 @@ namespace MiniFighters
             return false;
         }
     }
-
 
     [HarmonyPatch(typeof(LevelManager), "RestrictedGameOver", new Type[] { typeof(Aircraft) })]
     class AircraftCrashPatcher2
