@@ -11,8 +11,8 @@ The game now runs in "endless" mode. Unless the score dips below 0, the game won
 # How to Install
 
 - Switch the game to `mod_feat` [branch](https://partner.steamgames.com/doc/store/application/branches?) on Steam.
-- Backup and remove all `.dll` in `<path_to_game>\Mini Airways Playtest\BepInEx\plugins`.
-- Copy [MiniFighters.dll](https://github.com/ericpzh/MiniFighters/blob/main/bin/Debug/netstandard2.1/MiniFighters.dll) into `<path_to_game>\Mini Airways Playtest\BepInEx\plugins`
+- Backup and remove all `.dll` in `<path_to_game>\Mini Airways\BepInEx\plugins`.
+- Copy [MiniFighters.dll](https://github.com/ericpzh/MiniFighters/blob/main/bin/Debug/netstandard2.1/MiniFighters.dll) into `<path_to_game>\Mini Airways\BepInEx\plugins`
 - Recommand to use the included [map](https://github.com/ericpzh/MiniFighters/blob/main/AircraftCarrier.cm1).
 
 ***
@@ -30,6 +30,6 @@ The game now runs in "endless" mode. Unless the score dips below 0, the game won
 # 如何安装
 
 - 右键库中的Mini Airways，[属性 - 测试版 - mod_feat](https://partner.steamgames.com/doc/store/application/branches?l=schinese), 更新。
-- 备份然后删除所有 `<path_to_game>\Mini Airways Playtest\BepInEx\plugins`里的`.dll`文件。
-- 复制 [MiniFighters.dll](https://github.com/ericpzh/MiniFighters/blob/main/bin/Debug/netstandard2.1/MiniFighters.dll) 到 `<path_to_game>\Mini Airways Playtest\BepInEx\plugins`。
+- 备份然后删除所有 `<path_to_game>\Mini Airways\BepInEx\plugins`里的`.dll`文件。
+- 复制 [MiniFighters.dll](https://github.com/ericpzh/MiniFighters/blob/main/bin/Debug/netstandard2.1/MiniFighters.dll) 到 `<path_to_game>\Mini Airways\BepInEx\plugins`。
 - 推荐使用自带 [地图](https://github.com/ericpzh/MiniFighters/blob/main/AircraftCarrier.cm1).
