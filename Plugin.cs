@@ -442,6 +442,11 @@ namespace MiniFighters
     {
         static void Postfix(ref UpgradeManager __instance)
         {
+            if (MapManager.gameMode == GameMode.SandBox)
+            {
+                return;
+            }
+
             // Max-out all airspace.
             Camera.main.DOOrthoSize(LevelManager.Instance.maximumCameraOrthographicSize, 0.5f).SetUpdate(isIndependentUpdate: true);
 
@@ -677,10 +682,10 @@ namespace MiniFighters
     }
 
     // Patching turning speed.
-    [HarmonyPatch(typeof(Aircraft), "GenerateFlyingPath", new Type[] {})]
+    [HarmonyPatch(typeof(Aircraft), "GenerateFlyingPath", new Type[] {typeof(int)})]
     class PatchGenerateFlyingPath
     {
-        static bool Prefix(ref Aircraft __instance, ref object[] __state)
+        static bool Prefix(int count, ref Aircraft __instance, ref object[] __state)
         {
             AircraftTag tag = __instance.GetComponent<AircraftTag>();
             if (tag == null)
@@ -789,8 +794,8 @@ namespace MiniFighters
     }
 
     // Skip original point calculation.
-    [HarmonyPatch(typeof(GameDataWhiteBoard), "OnAircraftTookOff", new Type[] {})]
-    class PatchOnAircraftTookOff
+    [HarmonyPatch(typeof(GameDataWhiteBoard), "OnAircraftHandOff", new Type[] {})]
+    class PatchOnAircraftHandOff
     {
         static bool Prefix()
         {
@@ -812,9 +817,9 @@ namespace MiniFighters
     [HarmonyPatch(typeof(GameDataWhiteBoard), "Update", new Type[] {})]
     class PatchGameDataWhiteBoardUpdate
     {
-        static bool Prefix(GameDataWhiteBoard __instance, ref int ____tookOffCount)
+        static bool Prefix(GameDataWhiteBoard __instance, ref int ____handOffCount)
         {
-            ____tookOffCount = Manager.score;
+            ____handOffCount = Manager.score;
             return true;
         }
     }
