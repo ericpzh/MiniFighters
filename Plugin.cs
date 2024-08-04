@@ -54,10 +54,53 @@ namespace MiniFighters
         private void Start()
         {
             score = 0;
+
+            // Grab sprites from AF1 events.
+            PreLevel02Manager preLevel02Manager = (PreLevel02Manager)GameObject.FindObjectOfType(typeof(PreLevel02Manager));
+            if (preLevel02Manager == null)
+            {
+                return;
+            }
+
+            List<MapSelection.MapItem> MapData = preLevel02Manager.GetFieldValue<List<MapSelection.MapItem>>("MapData");
+            if (MapData == null)
+            {
+                return;
+            }
+            foreach (MapSelection.MapItem mapDatum in MapData)
+            {
+                if (mapDatum.sceneName == "SanFrancisco")
+                {
+                    AirForceOne af1 = mapDatum.MapContent.GetComponentInChildren<AirForceOne>();
+                    if (af1 == null)
+                    {
+                        return;
+                    }
+                    GameObject F16Prefab = af1.GetFieldValue<GameObject>("F16Prefab");
+                    GameObject B747Prefab = af1.GetFieldValue<GameObject>("B747Prefab");
+                    if (F16Prefab == null || B747Prefab == null)
+                    {
+                        return;
+                    }
+
+                    GameObject F16Obj = UnityEngine.Object.Instantiate<GameObject>(F16Prefab, new Vector3(0, 0, 0), Quaternion.identity);
+                    Aircraft F16 = F16Obj.GetComponent<Aircraft>();
+                    F16Sprite = F16.AP.GetComponent<SpriteRenderer>()?.sprite;
+                    F16.ConditionalDestroy();
+
+                    GameObject B747Obj = UnityEngine.Object.Instantiate<GameObject>(B747Prefab, new Vector3(-0, -0, 0), Quaternion.identity);
+                    Aircraft B747 = B747Obj.GetComponent<Aircraft>();
+                    B747Sprite = B747.AP.GetComponent<SpriteRenderer>()?.sprite;
+                    B747.ConditionalDestroy();
+                    break;
+                }
+            }
         }
 
         public static Manager Instance;
         public static int score = 0;
+        public static Sprite F16Sprite;
+        public static Sprite B747Sprite;
     }
 
     public class AircraftTag: MonoBehaviour
@@ -113,6 +156,16 @@ namespace MiniFighters
                 friendly.aircraft_.ConditionalDestroy();
 
                 Aircraft newAircraft = AircraftManager.Instance.CreateInboundAircraft(position, heading);
+
+                // Larger plane icon.
+                newAircraft.AP.gameObject.transform.localScale *= 1.5f;
+
+                // Change the sprite of newAircraft.
+                SpriteRenderer sr = newAircraft.AP.GetComponent<SpriteRenderer>();
+                if (sr != null && Manager.F16Sprite != null)
+                {
+                    sr.sprite = Manager.F16Sprite;
+                }
 
                 AircraftTag newFriendly = newAircraft.gameObject.GetComponent<AircraftTag>();
                 if (newFriendly == null)
@@ -255,20 +308,41 @@ namespace MiniFighters
     [HarmonyPatch(typeof(Aircraft), "Start", new Type[] {})]
     class PatchAircraftStart
     {
-        static void Postfix(ref Aircraft __instance)
+        static void Postfix(ref Aircraft __instance, ref float ___acceleration)
         {
             AircraftTag tag = __instance.gameObject.GetComponent<AircraftTag>();
             if (tag == null)
             {
                 tag = __instance.gameObject.AddComponent<AircraftTag>();
                 tag.aircraft_ = __instance;
+
                 if (__instance.direction == Aircraft.Direction.Inbound)
                 {
                     // Default arrival are not friendly.
                     tag.friendly_ = false;
+
+                    // Larger plane icon.
+                    __instance.AP.gameObject.transform.localScale *= 1.5f;
+
+                    // Change the sprite of planes.
+                    SpriteRenderer sr = __instance.AP.GetComponent<SpriteRenderer>();
+                    if (sr == null || Manager.B747Sprite == null)
+                    {
+                        return;
+                    }
+                    sr.sprite = Manager.B747Sprite;
+                } else {
+                    // Change the sprite of planes.
+                    SpriteRenderer sr = __instance.AP.GetComponent<SpriteRenderer>();
+                    if (sr == null || Manager.F16Sprite == null)
+                    {
+                        return;
+                    }
+                    sr.sprite = Manager.F16Sprite;
                 }
+
             }
-            __instance.SetFieldValue<float>("acceleration", 0.04f);
+            ___acceleration = 0.04f;
         }
     }
 
@@ -387,7 +461,7 @@ namespace MiniFighters
                 return false;
             }
 
-            // Friendly collide with enemy without shooting it down.
+            // Friendly collides with enemy without shooting it down.
             if (tag1.friendly_ != tag2.friendly_ && tag1.friendly_ || tag2.friendly_ && !tag1.down_ && !tag2.down_)
             {
                 if (!Manager.IsSubstractScoreGameOver())
@@ -442,6 +516,10 @@ namespace MiniFighters
     {
         static void Postfix(ref UpgradeManager __instance)
         {
+            // Attach Manager to ESC button.
+            GameObject esc_button = GameObject.Find("ESC_Button");
+            esc_button.gameObject.AddComponent<Manager>();
+
             if (MapManager.gameMode == GameMode.SandBox)
             {
                 return;
@@ -449,10 +527,6 @@ namespace MiniFighters
 
             // Max-out all airspace.
             Camera.main.DOOrthoSize(LevelManager.Instance.maximumCameraOrthographicSize, 0.5f).SetUpdate(isIndependentUpdate: true);
-
-            // Attach Manager to ESC button.
-            GameObject esc_button = GameObject.Find("ESC_Button");
-            esc_button.gameObject.AddComponent<Manager>();
         }
     }
 
@@ -463,8 +537,6 @@ namespace MiniFighters
         static void Postfix(ref List<float> __result)
         {
             __result[4] = 0; // AIRSPACE
-            __result[6] = 0; // AUTO_HEADING_PROP
-            __result[8] = 0; // AUTO_LANDING_PROP
             __result[9] = 0; // TAKING_OFF_PROP
         }
     }

@@ -6,7 +6,9 @@ Different color fighter has different speed and agility. The speed of the fighte
 
 The game now runs in "endless" mode. Unless the score dips below 0, the game won't end. You get one point deducted each time you lose a fighter. That is, having them out-of-bound, collide with each other, or collide with an enemy plane.
 
-<img src="ui.png" width=50% height=50%>
+Note: to get the F16 icon onto your fighters, you need to first load into a non-London game official map. You are free to load into any custom map after exiting the official map.
+
+<img src="ui.png" width=100% height=100%>
 
 # How to Install
 
@@ -25,7 +27,9 @@ The game now runs in "endless" mode. Unless the score dips below 0, the game won
 
 游戏现在以无尽模式运行，除非分数低于 0，否则游戏不会结束。每次您失去一架战斗机（战机飞出边界、相互碰撞或与敌机相撞）会被扣一分。
 
-<img src="ui.png" width=50% height=50%>
+想要正确加载战斗机图标，请首先加载入一张不是伦敦的官方地图。
+
+<img src="ui.png" width=100% height=100%>
 
 # 如何安装
 
