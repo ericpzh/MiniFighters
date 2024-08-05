@@ -83,12 +83,12 @@ namespace MiniFighters
                         return;
                     }
 
-                    GameObject F16Obj = UnityEngine.Object.Instantiate<GameObject>(F16Prefab, new Vector3(0, 0, 0), Quaternion.identity);
+                    GameObject F16Obj = UnityEngine.Object.Instantiate<GameObject>(F16Prefab, new Vector3(10, 10, 0), Quaternion.identity);
                     Aircraft F16 = F16Obj.GetComponent<Aircraft>();
                     F16Sprite = F16.AP.GetComponent<SpriteRenderer>()?.sprite;
                     F16.ConditionalDestroy();
 
-                    GameObject B747Obj = UnityEngine.Object.Instantiate<GameObject>(B747Prefab, new Vector3(-0, -0, 0), Quaternion.identity);
+                    GameObject B747Obj = UnityEngine.Object.Instantiate<GameObject>(B747Prefab, new Vector3(-10, -10, 0), Quaternion.identity);
                     Aircraft B747 = B747Obj.GetComponent<Aircraft>();
                     B747Sprite = B747.AP.GetComponent<SpriteRenderer>()?.sprite;
                     B747.ConditionalDestroy();
@@ -215,17 +215,17 @@ namespace MiniFighters
             switch(aircraft_.colorCode)
             {
                 case ColorCode.Option.LightBlue:
-                    return 0.12f;
+                    return 0.09f;
                 case ColorCode.Option.Green:
-                    return 0.10f;
-                case ColorCode.Option.Pink:
                     return 0.08f;
+                case ColorCode.Option.Pink:
+                    return 0.07f;
                 case ColorCode.Option.Yellow:
                     return 0.06f;
                 case ColorCode.Option.Orange:
-                    return 0.05f;
+                    return 0.055f;
                 case ColorCode.Option.Red:
-                    return 0.04f;
+                    return 0.05f;
             }
             return 0.06f;
         }
@@ -536,8 +536,8 @@ namespace MiniFighters
     {
         static void Postfix(ref List<float> __result)
         {
+            __result[3] = 0; // TURN_FASTER
             __result[4] = 0; // AIRSPACE
-            __result[9] = 0; // TAKING_OFF_PROP
         }
     }
 
