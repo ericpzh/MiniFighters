@@ -14,7 +14,7 @@ Note: to get the F16 icon onto your fighters, you need to first load into a non-
 
 - Switch the game to `mod_feat` [branch](https://partner.steamgames.com/doc/store/application/branches?) on Steam.
 - Backup and remove all `.dll` in `<path_to_game>\Mini Airways\BepInEx\plugins`.
-- Copy [MiniFighters.dll](https://github.com/ericpzh/MiniFighters/blob/main/bin/Debug/netstandard2.1/MiniFighters.dll) into `<path_to_game>\Mini Airways\BepInEx\plugins`
+- Download and move [MiniFighters.dll](https://github.com/ericpzh/MiniFighters/releases/download/Public/MiniFighters.dll) into `<path_to_game>\Mini Airways\BepInEx\plugins`
 - Recommand to use the included [map](https://github.com/ericpzh/MiniFighters/blob/main/AircraftCarrier.cm1).
 
 ***
@@ -35,5 +35,5 @@ Note: to get the F16 icon onto your fighters, you need to first load into a non-
 
 - 右键库中的Mini Airways，[属性 - 测试版 - mod_feat](https://partner.steamgames.com/doc/store/application/branches?l=schinese), 更新。
 - 备份然后删除所有 `<path_to_game>\Mini Airways\BepInEx\plugins`里的`.dll`文件。
-- 复制 [MiniFighters.dll](https://github.com/ericpzh/MiniFighters/blob/main/bin/Debug/netstandard2.1/MiniFighters.dll) 到 `<path_to_game>\Mini Airways\BepInEx\plugins`。
+- 下载 [MiniFighters.dll](https://github.com/ericpzh/MiniFighters/releases/download/Public/MiniFighters.dll) 到 `<path_to_game>\Mini Airways\BepInEx\plugins`。
 - 推荐使用自带 [地图](https://github.com/ericpzh/MiniFighters/blob/main/AircraftCarrier.cm1).
